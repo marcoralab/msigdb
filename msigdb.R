@@ -41,9 +41,9 @@ gencode_gtf_gz_url <- str_glue("{gencode_url_base}_{gencode_species}/release_{ge
 msigdb_db_zip_url <- str_glue("{msigdb_url_base}/release/{msigdb_release}.{msigdb_species}/{msigdb_db_zip}")
 msigdb_chip_url <- str_glue("{msigdb_url_base}/annotations/{species}/{msigdb_chip}")
 
-gencode_gtf_gz_destfile = here("input", gencode_gtf_gz)
-msigdb_db_zip_destfile = here("input", msigdb_db_zip)
-msigdb_chip_destfile = here("input", msigdb_chip)
+gencode_gtf_gz_destfile <- here("input", gencode_gtf_gz)
+msigdb_db_zip_destfile <- here("input", msigdb_db_zip)
+msigdb_chip_destfile <- here("input", msigdb_chip)
 
 # download (g)zipped files
 if(!file.exists(gencode_gtf_gz_destfile)) download.file(url = gencode_gtf_gz_url, destfile = gencode_gtf_gz_destfile)
