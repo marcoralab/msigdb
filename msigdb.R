@@ -80,9 +80,7 @@ ensgenes
 
 stopifnot(nrow(ensgenes) == nrow(distinct(ensgenes, gene_id)))
 
-
 # process msigdb chip 
-
 chip <- read_tsv(msigdb_chip_destfile, progress = FALSE, show_col_types = FALSE) |>
   select(ensgene = `Probe Set ID`, symbol = `Gene Symbol`)
 
@@ -93,7 +91,6 @@ nrow(ensgenes)
 chip |> filter(ensgene %in% ensgenes$ensgene) |> nrow()
 
 ensgenes |> inner_join(chip, by = "ensgene") |> filter(gene_name != symbol) |> print(n = Inf)
-
 
 # process msigdb db
 db <- DBI::dbConnect(RSQLite::SQLite(), dbname = here("input", msigdb_db), flags = RSQLite::SQLITE_RO)
@@ -107,6 +104,7 @@ gene_set_details <- tbl(db, "gene_set_details") |> as_tibble()
 
 DBI::dbDisconnect(db)
 
+# join tables
 d <- gene_set |>
   inner_join(gene_set_gene_symbol, join_by(id == gene_set_id)) |> 
   inner_join(gene_symbol, join_by(gene_symbol_id == id)) |> 
@@ -117,6 +115,7 @@ d <- gene_set |>
 
 d
 
+# write GMT files to output dir
 for (cn in unique(d$collection_name)) {
   suffix <- str_replace_all(cn, "[[:punct:]]", "\\.")
   d |> filter(collection_name == cn) |>
