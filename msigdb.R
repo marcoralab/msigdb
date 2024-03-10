@@ -43,11 +43,12 @@ msigdb_chip_url <- str_glue("{msigdb_url_base}/annotations/{species}/{msigdb_chi
 
 gencode_gtf_gz_destfile <- here("input", gencode_gtf_gz)
 msigdb_db_zip_destfile <- here("input", msigdb_db_zip)
+msigdb_db_destfile <- here("input", msigdb_db)
 msigdb_chip_destfile <- here("input", msigdb_chip)
 
 # download (g)zipped files
 if(!file.exists(gencode_gtf_gz_destfile)) download.file(url = gencode_gtf_gz_url, destfile = gencode_gtf_gz_destfile)
-if(!file.exists(msigdb_db_zip_destfile)) download.file(url = msigdb_db_zip_url, destfile = msigdb_db_zip_destfile)
+if(!file.exists(msigdb_db_destfile) && !file.exists(msigdb_db_zip_destfile)) download.file(url = msigdb_db_zip_url, destfile = msigdb_db_zip_destfile)
 if(!file.exists(msigdb_chip_destfile)) download.file(url = msigdb_chip_url, destfile = msigdb_chip_destfile)
 
 # unzip zipped file
@@ -63,16 +64,14 @@ gencode.genes <- gtf |> filter(type == "gene") |> as_tibble()
 
 stopifnot(nrow(gencode.genes) == nrow(distinct(gencode.genes, gene_id)))
 
-gencode.genes.autosomal <- gencode.genes |> filter(seqnames %in% paste0("chr", 1:22))
+gencode.genes.autosomal <- gencode.genes |> filter(seqnames %in% paste0("chr", 1:22), str_ends(gene_id, "_PAR_Y", negate = TRUE))
 
 gencode.genes.autosomal |>
   group_by(gene_type) |>
   summarize(number = n()) |>
   print(n = Inf)
 
-gencode.genes.autosomal.protein_coding <- gencode.genes |> filter(gene_type == "protein_coding", str_ends(gene_id, "_PAR_Y", negate = TRUE))
-
-ensgenes <- gencode.genes.autosomal.protein_coding |>
+ensgenes <- gencode.genes.autosomal |>
   select(gene_id, gene_name) |>
   separate(gene_id, into = c("ensgene", NA), sep = "\\.", remove = FALSE)
 
@@ -93,7 +92,7 @@ chip |> filter(ensgene %in% ensgenes$ensgene) |> nrow()
 ensgenes |> inner_join(chip, by = "ensgene") |> filter(gene_name != symbol) |> print(n = Inf)
 
 # process msigdb db
-db <- DBI::dbConnect(RSQLite::SQLite(), dbname = here("input", msigdb_db), flags = RSQLite::SQLITE_RO)
+db <- DBI::dbConnect(RSQLite::SQLite(), dbname = msigdb_db_destfile, flags = RSQLite::SQLITE_RO)
 
 RSQLite::dbListTables(db)
 
