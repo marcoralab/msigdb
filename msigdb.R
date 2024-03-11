@@ -118,7 +118,7 @@ gene_set <- gene_set |>
   inner_join(ensgenes, join_by(symbol == gene_name), relationship = "many-to-many") |>
   inner_join(gene_set_details, join_by(id == gene_set_id)) |>
   select(id, standard_name, systematic_name, collection_name, description_brief, symbol, NCBI_id, gene_id, ensgene) |>
-  separate(collection_name, into = "collection_name_top", sep = ":", remove = FALSE, extra = "drop")
+  separate(collection_name, into = c("cat", "subcat"), sep = ":", remove = FALSE, extra = "merge")
 
 gene_set
 
@@ -129,31 +129,31 @@ gene_set_size_output <- gene_set |>
 # size of genesets in input and output, check for large mismatch
 gene_set_size <- gene_set_size_input |> 
   left_join(gene_set_size_output, by = "standard_name", suffix = c("_input", "_output")) |>
-  filter(abs(n_input - n_output) >= (n_input * 0.2)) |>
+  filter(abs(n_input - n_output) >= (n_input * 0.1)) |>
   write_tsv(msigdb_log) |> 
   print(n = Inf)
 
 # write GMT files to output dir
-for (cn in unique(gene_set$collection_name)) {
-  suffix <- str_replace_all(cn, "[[:punct:]]", "\\.")
-  gene_set |> filter(collection_name == cn) |>
+for (col in unique(gene_set$collection_name)) {
+  suffix <- str_replace_all(col, "[[:punct:]]", "\\.")
+  gene_set |> filter(collection_name == col) |>
     select(standard_name, description_brief, gene_id) |>
     arrange(standard_name, gene_id) |>
     nest(data = gene_id) |>
     mutate(gene_ids = map_chr(data, ~ str_flatten(unique(.x$gene_id), collapse = "\t"))) |> 
     select(standard_name, description_brief, gene_ids) |>
-    write_tsv(str_glue("output/msigdb_v{msigdb_release}.{msigdb_species}.{suffix}.gmt"), col_names = FALSE)
+    write_tsv(str_glue("output/msigdb_v{msigdb_release}.{msigdb_species}.gencode.v{gencode_release}.basic.annotation.{suffix}.gmt"), col_names = FALSE)
 }
 
-for (cnt in unique(gene_set$collection_name_top)) {
-  suffix = cnt
-  gene_set |> filter(collection_name_top == cnt) |>
+for (cat in unique(gene_set$cat)) {
+  suffix = cat
+  gene_set |> filter(cat == cat) |>
     select(standard_name, description_brief, gene_id) |>
     arrange(standard_name, gene_id) |>
     nest(data = gene_id) |>
     mutate(gene_ids = map_chr(data, ~ str_flatten(unique(.x$gene_id), collapse = "\t"))) |> 
     select(standard_name, description_brief, gene_ids) |>
-    write_tsv(str_glue("output/msigdb_v{msigdb_release}.{msigdb_species}.{suffix}.gmt"), col_names = FALSE)
+    write_tsv(str_glue("output/msigdb_v{msigdb_release}.{msigdb_species}.gencode.v{gencode_release}.basic.annotation.{suffix}.gmt"), col_names = FALSE)
 }
 
 ################################################################################
