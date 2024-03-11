@@ -112,7 +112,7 @@ gene_set_size_input <- gene_set |>
   count(standard_name)
 
 # join tables
-gene_set <- gene_set |>
+gene_set.genes <- gene_set |>
   inner_join(gene_set_gene_symbol, join_by(id == gene_set_id)) |> 
   inner_join(gene_symbol, join_by(gene_symbol_id == id)) |> 
   inner_join(ensgenes, join_by(symbol == gene_name), relationship = "many-to-many") |>
@@ -120,10 +120,10 @@ gene_set <- gene_set |>
   select(id, standard_name, systematic_name, collection_name, description_brief, symbol, NCBI_id, gene_id, ensgene) |>
   separate(collection_name, into = c("cat", "subcat"), sep = ":", remove = FALSE, extra = "merge")
 
-gene_set
+gene_set.genes
 
 # size of genesets in output
-gene_set_size_output <- gene_set |>
+gene_set_size_output <- gene_set.genes |>
   count(standard_name)
 
 # size of genesets in input and output, check for large mismatch
@@ -134,9 +134,9 @@ gene_set_size <- gene_set_size_input |>
   print(n = Inf)
 
 # write GMT files to output dir
-for (col in unique(gene_set$collection_name)) {
+for (col in unique(gene_set.genes$collection_name)) {
   suffix <- str_replace_all(col, "[[:punct:]]", "\\.")
-  gene_set |> filter(collection_name == col) |>
+  gene_set.genes |> filter(collection_name == col) |>
     select(standard_name, description_brief, gene_id) |>
     arrange(standard_name, gene_id) |>
     nest(data = gene_id) |>
@@ -145,9 +145,9 @@ for (col in unique(gene_set$collection_name)) {
     write_tsv(str_glue("output/msigdb_v{msigdb_release}.{msigdb_species}.gencode.v{gencode_release}.basic.annotation.{suffix}.gmt"), col_names = FALSE)
 }
 
-for (cat in unique(gene_set$cat)) {
-  suffix = cat
-  gene_set |> filter(cat == cat) |>
+for (col in unique(gene_set.genes$cat)) {
+  suffix <- col
+  gene_set.genes |> filter(cat == col) |>
     select(standard_name, description_brief, gene_id) |>
     arrange(standard_name, gene_id) |>
     nest(data = gene_id) |>
